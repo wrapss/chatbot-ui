@@ -15,9 +15,9 @@ import {
 import { Input } from "../ui/input"
 import { QuickSettingOption } from "./quick-setting-option"
 
-interface QuickSettingsProps {}
+interface QuickSettingsProps { }
 
-export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
+export const QuickSettings: FC<QuickSettingsProps> = ({ }) => {
   useHotkey("p", () => setIsOpen(prevState => !prevState))
 
   const {
@@ -64,7 +64,7 @@ export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
       contextLength: item.context_length,
       includeProfileContext: item.include_profile_context,
       includeWorkspaceInstructions: item.include_workspace_instructions,
-      embeddingsProvider: item.embeddings_provider as "openai" | "local"
+      embeddingsProvider: item.embeddings_provider as "openai" | "local" | "ollama"
     })
   }
 
@@ -74,9 +74,9 @@ export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
     if (selectedPreset) {
       if (
         selectedPreset.include_profile_context !==
-          chatSettings.includeProfileContext ||
+        chatSettings.includeProfileContext ||
         selectedPreset.include_workspace_instructions !==
-          chatSettings.includeWorkspaceInstructions ||
+        chatSettings.includeWorkspaceInstructions ||
         selectedPreset.context_length !== chatSettings.contextLength ||
         selectedPreset.model !== chatSettings.model ||
         selectedPreset.prompt !== chatSettings.prompt ||
@@ -87,9 +87,9 @@ export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
     } else if (selectedAssistant) {
       if (
         selectedAssistant.include_profile_context !==
-          chatSettings.includeProfileContext ||
+        chatSettings.includeProfileContext ||
         selectedAssistant.include_workspace_instructions !==
-          chatSettings.includeWorkspaceInstructions ||
+        chatSettings.includeWorkspaceInstructions ||
         selectedAssistant.context_length !== chatSettings.contextLength ||
         selectedAssistant.model !== chatSettings.model ||
         selectedAssistant.prompt !== chatSettings.prompt ||
@@ -115,8 +115,8 @@ export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
   const selectedAssistantImage = selectedPreset
     ? ""
     : assistantImages.find(
-        image => image.path === selectedAssistant?.image_path
-      )?.base64 || ""
+      image => image.path === selectedAssistant?.image_path
+    )?.base64 || ""
 
   return (
     <DropdownMenu
@@ -217,10 +217,10 @@ export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
                   image={
                     contentType === "assistants"
                       ? assistantImages.find(
-                          image =>
-                            image.path ===
-                            (item as Tables<"assistants">).image_path
-                        )?.base64 || ""
+                        image =>
+                          image.path ===
+                          (item as Tables<"assistants">).image_path
+                      )?.base64 || ""
                       : ""
                   }
                 />

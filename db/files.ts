@@ -61,7 +61,7 @@ export const createFile = async (
   file: File,
   fileRecord: TablesInsert<"files">,
   workspace_id: string,
-  embeddingsProvider: "openai" | "local"
+  embeddingsProvider: "openai" | "local" | "ollama"
 ) => {
   const { data: createdFile, error } = await supabase
     .from("files")

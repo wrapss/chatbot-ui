@@ -1,4 +1,5 @@
 import { generateLocalEmbedding } from "@/lib/generate-local-embedding"
+import { generateOllamaEmbedding } from "@/lib/generate-ollama-embeddings"
 import { checkApiKey, getServerProfile } from "@/lib/server-chat-helpers"
 import { Database } from "@/supabase/types"
 import { createClient } from "@supabase/supabase-js"
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
   const { userInput, fileIds, embeddingsProvider } = json as {
     userInput: string
     fileIds: string[]
-    embeddingsProvider: "openai" | "local"
+    embeddingsProvider: "openai" | "local" | "ollama"
   }
 
   try {
@@ -68,6 +69,20 @@ export async function POST(request: Request) {
       }
 
       chunks = localFileItems
+    } else if (embeddingsProvider === "ollama") {
+      const ollamaEmbedding = await generateOllamaEmbedding(userInput)
+      const { data: ollamaFileItems, error: ollamaFileItemsError } =
+        await supabaseAdmin.rpc("match_file_items_local", {
+          query_embedding: ollamaEmbedding as any,
+          match_count: MATCH_COUNT,
+          file_ids: fileIds
+        })
+
+      if (ollamaFileItemsError) {
+        throw ollamaFileItemsError
+      }
+
+      chunks = ollamaFileItems
     }
 
     const totalTokenCount = chunks?.reduce(

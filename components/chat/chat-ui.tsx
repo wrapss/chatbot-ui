@@ -18,9 +18,9 @@ import { ChatMessages } from "./chat-messages"
 import { ChatScrollButtons } from "./chat-scroll-buttons"
 import { ChatSecondaryButtons } from "./chat-secondary-buttons"
 
-interface ChatUIProps {}
+interface ChatUIProps { }
 
-export const ChatUI: FC<ChatUIProps> = ({}) => {
+export const ChatUI: FC<ChatUIProps> = ({ }) => {
   useHotkey("o", () => handleNewChat())
 
   const params = useParams()
@@ -82,30 +82,30 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       message =>
         message.image_paths
           ? message.image_paths.map(async imagePath => {
-              const url = await getMessageImageFromStorage(imagePath)
+            const url = await getMessageImageFromStorage(imagePath)
 
-              if (url) {
-                const response = await fetch(url)
-                const blob = await response.blob()
-                const base64 = await convertBlobToBase64(blob)
-
-                return {
-                  messageId: message.id,
-                  path: imagePath,
-                  base64,
-                  url,
-                  file: null
-                }
-              }
+            if (url) {
+              const response = await fetch(url)
+              const blob = await response.blob()
+              const base64 = await convertBlobToBase64(blob)
 
               return {
                 messageId: message.id,
                 path: imagePath,
-                base64: "",
+                base64,
                 url,
                 file: null
               }
-            })
+            }
+
+            return {
+              messageId: message.id,
+              path: imagePath,
+              base64: "",
+              url,
+              file: null
+            }
+          })
           : []
     )
 
@@ -185,7 +185,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       contextLength: chat.context_length,
       includeProfileContext: chat.include_profile_context,
       includeWorkspaceInstructions: chat.include_workspace_instructions,
-      embeddingsProvider: chat.embeddings_provider as "openai" | "local"
+      embeddingsProvider: chat.embeddings_provider as "openai" | "local" | "ollama"
     })
   }
 

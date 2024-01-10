@@ -55,7 +55,7 @@ export const handleRetrieval = async (
   userInput: string,
   newMessageFiles: ChatFile[],
   chatFiles: ChatFile[],
-  embeddingsProvider: "openai" | "local"
+  embeddingsProvider: "openai" | "local" | "ollama"
 ) => {
   const response = await fetch("/api/retrieval/retrieve", {
     method: "POST",
@@ -152,7 +152,7 @@ export const handleLocalChat = async (
   setToolInUse: React.Dispatch<React.SetStateAction<"none" | "retrieval">>
 ) => {
   const formattedMessages = await buildFinalMessages(payload, profile, [])
-
+  console.log(chatSettings.model);
   // Ollama API: https://github.com/jmorganca/ollama/blob/main/docs/api.md
   const response = await fetchChatResponse(
     process.env.NEXT_PUBLIC_OLLAMA_URL + "/api/chat",
@@ -418,9 +418,8 @@ export const handleCreateMessages = async (
     const uploadPromises = newMessageImages
       .filter(obj => obj.file !== null)
       .map(obj => {
-        let filePath = `${profile.user_id}/${currentChat.id}/${
-          createdMessages[0].id
-        }/${uuidv4()}`
+        let filePath = `${profile.user_id}/${currentChat.id}/${createdMessages[0].id
+          }/${uuidv4()}`
 
         return uploadMessageImage(filePath, obj.file as File).catch(error => {
           console.error(`Failed to upload image at ${filePath}:`, error)

@@ -1,4 +1,5 @@
 import { generateLocalEmbedding } from "@/lib/generate-local-embedding"
+import { generateOllamaEmbedding } from "@/lib/generate-ollama-embeddings"
 import { processCSV } from "@/lib/retrieval/processing/csv"
 import { processDoc } from "@/lib/retrieval/processing/doc"
 import { processDocX } from "@/lib/retrieval/processing/docx"
@@ -97,8 +98,18 @@ export async function POST(req: Request) {
       })
 
       embeddings = await Promise.all(embeddingPromises)
-    }
+    } else if (embeddingsProvider === "ollama") {
+      const llamaPromises = chunks.map(async chunk => {
+        try {
+          return await generateOllamaEmbedding(chunk.content);
+        } catch (error) {
+          console.error(`Error generating embedding for chunk: ${chunk}`, error)
+          return null;
+        }
+      });
 
+      embeddings = await Promise.all(llamaPromises);
+    }
     const file_items = chunks.map((chunk, index) => ({
       file_id,
       user_id: profile.user_id,
@@ -109,7 +120,7 @@ export async function POST(req: Request) {
           ? ((embeddings[index] || null) as any)
           : null,
       local_embedding:
-        embeddingsProvider === "local"
+        embeddingsProvider === "local" || embeddingsProvider === "ollama"
           ? ((embeddings[index] || null) as any)
           : null
     }))
