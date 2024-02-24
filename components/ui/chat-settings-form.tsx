@@ -2,10 +2,9 @@
 
 import { ChatbotUIContext } from "@/context/context"
 import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
-import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { ChatSettings } from "@/types"
 import { IconInfoCircle } from "@tabler/icons-react"
-import { FC, useContext } from "react"
+import { FC, useContext, useState } from "react"
 import { ModelSelect } from "../models/model-select"
 import { AdvancedSettings } from "./advanced-settings"
 import { Checkbox } from "./checkbox"
@@ -34,7 +33,7 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
   useAdvancedDropdown = true,
   showTooltip = true
 }) => {
-  const { profile, availableLocalModels } = useContext(ChatbotUIContext)
+  const { profile, models } = useContext(ChatbotUIContext)
 
   if (!profile) return null
 
@@ -44,8 +43,6 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
         <Label>Model</Label>
 
         <ModelSelect
-          hostedModelOptions={LLM_LIST}
-          localModelOptions={availableLocalModels}
           selectedModelId={chatSettings.model}
           onSelectModel={model => {
             onChangeChatSettings({ ...chatSettings, model })
@@ -58,7 +55,7 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
 
         <TextareaAutosize
           className="bg-background border-input border-2"
-          placeholder="Send a message..."
+          placeholder="You are a helpful AI assistant."
           onValueChange={prompt => {
             onChangeChatSettings({ ...chatSettings, prompt })
           }}
@@ -100,12 +97,33 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
   onChangeChatSettings,
   showTooltip
 }) => {
-  const { profile, selectedWorkspace } = useContext(ChatbotUIContext)
+  const {
+    profile,
+    selectedWorkspace,
+    availableOpenRouterModels,
+    availableLocalModels,
+    selectedAssistant,
+    models
+  } = useContext(ChatbotUIContext)
+  useContext(ChatbotUIContext)
+
+  const isCustomModel = models.some(
+    model => model.model_id === chatSettings.model
+  )
+  function findOpenRouterModel(modelId: string) {
+    return availableOpenRouterModels.find(model => model.modelId === modelId)
+  }
+
+  const isLocalModel = () => {
+    return availableLocalModels.some(model => model.modelId === chatSettings.model);
+  }
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const MODEL_LIMITS = CHAT_SETTING_LIMITS[chatSettings.model] || {
     MIN_TEMPERATURE: 0,
     MAX_TEMPERATURE: 1,
-    MAX_CONTEXT_LENGTH: 4096
+    MAX_CONTEXT_LENGTH:
+      findOpenRouterModel(chatSettings.model)?.maxContext || 4096
   }
 
   return (
@@ -147,7 +165,12 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
             })
           }}
           min={0}
-          max={MODEL_LIMITS.MAX_CONTEXT_LENGTH - 200} // 200 is a minimum buffer for token output
+          max={
+            isCustomModel
+              ? models.find(model => model.model_id === chatSettings.model)
+                ?.context_length
+              : MODEL_LIMITS.MAX_CONTEXT_LENGTH
+          }
           step={1}
         />
       </div>
@@ -179,6 +202,59 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
           />
         )}
       </div>
+
+      <div className="mt-6 space-y-3">
+        <Checkbox
+          checked={showAdvancedSettings}
+          onCheckedChange={(value: boolean) => setShowAdvancedSettings(value)}
+        />
+        <Label>Advanced setting for ollama</Label>
+      </div>
+
+      {showAdvancedSettings && isLocalModel() && (
+        <div>
+          <div className="mt-4 space-y-3">
+            <Label className="flex items-center space-x-1">
+              <div>Number of Threads:</div>
+
+              <div>{chatSettings.localModelThreads || -1}</div>
+            </Label>
+
+            <Slider
+              value={[chatSettings.localModelThreads || -1]}
+              onValueChange={localModelThreads => {
+                onChangeChatSettings({
+                  ...chatSettings,
+                  localModelThreads: localModelThreads[0]
+                })
+              }}
+              min={-1}
+              max={8}
+              step={1}
+            />
+          </div>
+          <div className="mt-4 space-y-3">
+            <Label className="flex items-center space-x-1">
+              <div>Number of layers send to GPU:</div>
+
+              <div>{chatSettings.localModelNumGpus || -1}</div>
+            </Label>
+
+            <Slider
+              value={[chatSettings.localModelNumGpus || -1]}
+              onValueChange={localModelNumGpus => {
+                onChangeChatSettings({
+                  ...chatSettings,
+                  localModelNumGpus: localModelNumGpus[0]
+                })
+              }}
+              min={-1}
+              max={99}
+              step={1}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 flex items-center space-x-2">
         <Checkbox
@@ -226,10 +302,11 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
           </SelectTrigger>
 
           <SelectContent>
-            <SelectItem value="openai">OpenAI</SelectItem>
-
-            <SelectItem value="local">Local</SelectItem>
+            <SelectItem value="openai">
+              {profile?.use_azure_openai ? "Azure OpenAI" : "OpenAI"}
+            </SelectItem>
             <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="local">Local</SelectItem>
           </SelectContent>
         </Select>
       </div>
